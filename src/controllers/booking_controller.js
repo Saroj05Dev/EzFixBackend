@@ -5,6 +5,7 @@ const {
   updateBookingStatusService,
   createBookingService,
   getAllBookingsService,
+  deleteBookingService,
 } = require("../services/booking_service");
 
 async function getCustomerBookings(req, res) {
@@ -91,6 +92,15 @@ async function updateBookingStatus(req, res) {
   }
 }
 
+async function deleteBooking(req, res) {
+  try {
+    await deleteBookingService(req.params.id, req.user.id);
+    return res.status(200).json({ success: true, message: "Booking deleted successfully" });
+  } catch (e) {
+    return res.status(e.statusCode || 500).json({ success: false, error: e.reason });
+  }
+}
+
 module.exports = {
   getCustomerBookings,
   cancelBooking,
@@ -98,4 +108,5 @@ module.exports = {
   updateBookingStatus,
   createBooking,
   getAllBookings,
+  deleteBooking,
 };

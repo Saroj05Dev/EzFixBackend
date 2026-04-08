@@ -14,13 +14,18 @@ async function addAdmin(adminDetails) {
         throw new Error("Phone number already exists. Please enter another number.");
     }
     const hashedPassword = await bcrypt.hash(adminDetails.password, 10);
-    const newAdmin = await createAdmin({
+    const adminPayload = {
         name: adminDetails.name,
         email: adminDetails.email,
-        phone: adminDetails.phone,
         password: hashedPassword,
         role: adminDetails.role || "admin"
-    });
+    };
+
+    if (adminDetails.phone && adminDetails.phone.trim() !== "") {
+        adminPayload.phone = adminDetails.phone;
+    }
+
+    const newAdmin = await createAdmin(adminPayload);
 
     return newAdmin;
 }

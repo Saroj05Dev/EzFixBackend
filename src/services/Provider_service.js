@@ -161,11 +161,18 @@ async function listAllProviders() {
 }
 // admin create provider
 async function createProvider(data) {
-  return await User.create({
+  const providerData = {
     ...data,
     role: "provider",
     availability: "offline",
-  });
+  };
+
+  // Prevent duplicate null/empty strings for phone
+  if (!providerData.phone || providerData.phone.trim() === "") {
+    delete providerData.phone;
+  }
+
+  return await User.create(providerData);
 }
 
 // admin update provider

@@ -5,6 +5,7 @@ const {
   findBookingById,
   createBooking,
   getAllBookings,
+  deleteBookingRepo,
 } = require("../repositories/booking_repositories");
 const notificationService = require("./notification_service");
 const { createRazorpayOrder } = require("./paymentService");
@@ -97,6 +98,26 @@ async function createBookingService(userId, payload) {
   return { booking };
 }
 
+async function deleteBookingService(bookingId, userId) {
+  const booking = await findBookingById(bookingId);
+  if (!booking) throw { reason: "Booking not found", statusCode: 404 };
+
+  // Allow either the customer or the professional to delete historical records if they wish, 
+  // or restricted to just the customer for their own history. 
+  // User usually means delete from THEIR view.
+  // For simplicity, we hard delete if the requesting user is the customer.
+  if (booking.customer_id.toString() !== userId) {
+    throw { reason: "Unauthorized to delete this booking", statusCode: 403 };
+  }
+
+  // Optional: Only allow deleting Completed or Cancelled bookings
+  if (!["Completed", "Cancelled"].includes(booking.status)) {
+    throw { reason: "Cannot delete an active booking", statusCode: 400 };
+  }
+
+  return await deleteBookingRepo(bookingId);
+}
+
 async function getAllBookingsService() {
   return await getAllBookings();
 }
@@ -108,4 +129,5 @@ module.exports = {
   updateBookingStatusService,
   createBookingService, // ← NEW
   getAllBookingsService,
+  deleteBookingService,
 };

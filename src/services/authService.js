@@ -90,14 +90,19 @@ async function registerAndLogin(userDetails) {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // 5 Create user
-  const user = await createUser({
+  const userPayload = {
     name,
     email,
-    phone,
     password: hashedPassword,
     role: role || "user",
     isVerified: true,
-  });
+  };
+
+  if (phone && phone.trim() !== "") {
+    userPayload.phone = phone;
+  }
+
+  const user = await createUser(userPayload);
 
   // 6 Auto-login token
   const token = jwt.sign(

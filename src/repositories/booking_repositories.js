@@ -79,6 +79,11 @@ async function getAllBookings() {
     })
     .sort({ date: -1 });
 }
+
+async function deleteBookingRepo(id) {
+  return await Booking.findByIdAndDelete(id);
+}
+
 module.exports = {
   findBookingById,
   getCustomerBookings,
@@ -86,4 +91,5 @@ module.exports = {
   updateBookingStatus,
   createBooking,
   getAllBookings,
+  deleteBookingRepo,
 };

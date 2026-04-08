@@ -32,7 +32,7 @@ async function updateUserProfile(id, updatedData) {
 
 async function registerUser(userDetails) {
   let { email, phone, password } = userDetails;
-  phone = phone.replace(/\D/g, "");
+  if (phone) phone = phone.replace(/\D/g, "");
 
   const existing =
     (await findUser({ email })) || (await findUser({ phone }));
@@ -54,12 +54,19 @@ async function registerUser(userDetails) {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  return createUser({
+  const userPayload = {
     ...userDetails,
-    phone,
     password: hashedPassword,
     isVerified: true,
-  });
+  };
+
+  if (phone && phone.trim() !== "") {
+    userPayload.phone = phone;
+  } else {
+    delete userPayload.phone;
+  }
+
+  return createUser(userPayload);
 }
 
 async function changePassword(userId, oldPassword, newPassword) {
