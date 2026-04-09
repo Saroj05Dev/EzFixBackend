@@ -21,6 +21,7 @@ const provideroutes = require("./routes/Provider_routes");
 const reviewroutes = require("./routes/review_routes");
 const notificationRoutes = require("./routes/notification_routes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const settingsRoutes = require("./routes/settings_routes");
 
 const app = express();
 const server = http.createServer(app);
@@ -53,6 +54,7 @@ app.use("/api/provider", provideroutes);
 app.use("/api/admin", adminRouter);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/settings", settingsRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Global Error Handler

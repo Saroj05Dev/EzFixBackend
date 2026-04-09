@@ -35,7 +35,7 @@ async function registerUser(userDetails) {
   if (phone) phone = phone.replace(/\D/g, "");
 
   const existing =
-    (await findUser({ email })) || (await findUser({ phone }));
+    (await findUser({ email })) || (phone && await findUser({ phone }));
 
   if (existing) {
     throw {
