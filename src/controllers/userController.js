@@ -3,8 +3,9 @@ const {
   getUserProfile,
   updateUserProfile,
 } = require("../services/userService");
-const { registerAndLogin } = require("../services/authService");
+const { registerAndLogin, resetPassword } = require("../services/authService");
 const { sendOtp, verifyOtp } = require("../services/otpService");
+const { findUser } = require("../repositories/userRepository");
 
 async function getProfile(req, res) {
   try {
@@ -130,6 +131,78 @@ async function uploadProfileImage(req, res) {
   }
 }
 
+async function sendForgotPasswordOtp(req, res) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    // Verify that the user actually exists before sending OTP
+    const user = await findUser({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No account found with this email." });
+    }
+
+    const forceResend = req.body.forceResend === true;
+    await sendOtp(email, forceResend, user.name);
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent successfully. Please check your email.",
+    });
+  } catch (e) {
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, message: e.reason || "Failed to send OTP" });
+  }
+}
+
+async function verifyForgotPasswordOtp(req, res) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+    }
+    // Verify without deleting so it can be consumed in the reset step
+    await verifyOtp(email, otp, true);
+    return res.status(200).json({ success: true, message: "OTP verified successfully" });
+  } catch (e) {
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, message: e.reason || "OTP verification failed" });
+  }
+}
+
+async function resetUserPassword(req, res) {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP, and new password are all required.",
+      });
+    }
+
+    // 1. Verify OTP first (this also deletes the OTP record)
+    await verifyOtp(email, otp);
+
+    // 2. Reset the password
+    const result = await resetPassword(email, newPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (e) {
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, message: e.reason || "Password reset failed" });
+  }
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -138,6 +211,8 @@ module.exports = {
   verifyUserOtp,
   getAllUsers,
   changePassword,
-  uploadProfileImage
+  uploadProfileImage,
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+  resetUserPassword,
 };
-

@@ -18,7 +18,7 @@ require("../config/serverConfig");
 
 // ─── Email HTML Template (DoEz / Fixerly Brand) ─────────────────────────────
 
-function buildEmailHtml(otp) {
+function buildEmailHtml(otp, name) {
   const digits = otp.split("");
   const otpBoxes = digits
     .map(
@@ -63,8 +63,9 @@ function buildEmailHtml(otp) {
             <!-- Greeting -->
             <p style="margin:0 0 6px;color:#0d9488;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Email Verification</p>
             <h2 style="margin:0 0 16px;color:#111827;font-size:24px;font-weight:800;line-height:1.3;">Enter your verification code</h2>
+            ${name ? `<p style="margin:0 0 8px;color:#111827;font-size:16px;font-weight:600;">Hi ${name},</p>` : ''}
             <p style="margin:0 0 32px;color:#64748b;font-size:15px;line-height:1.7;">
-              We received a request to verify your email for <strong style="color:#111827;">DoEz</strong>. Use the code below to complete your registration. It expires in <strong style="color:#0d9488;">5 minutes</strong>.
+              We received a request to verify your email for <strong style="color:#111827;">DoEz</strong>. Use the code below to complete your verification. It expires in <strong style="color:#0d9488;">5 minutes</strong>.
             </p>
 
             <!-- OTP Digits -->
@@ -141,7 +142,7 @@ function buildEmailHtml(otp) {
 
 // ─── Brevo REST API Email Sender ─────────────────────────────────────────────
 
-function sendViaBrevoAPI(toEmail, otp) {
+function sendViaBrevoAPI(toEmail, otp, name) {
   return new Promise((resolve, reject) => {
     const apiKey = process.env.BREVO_API_KEY;
     const senderEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
@@ -154,7 +155,7 @@ function sendViaBrevoAPI(toEmail, otp) {
       sender: { name: "DoEz / Fixerly", email: senderEmail },
       to: [{ email: toEmail }],
       subject: "Your DoEz Verification Code",
-      htmlContent: buildEmailHtml(otp),
+      htmlContent: buildEmailHtml(otp, name),
       textContent: `Your DoEz OTP is: ${otp}\nThis code expires in 5 minutes. Do not share it.`,
     });
 
@@ -198,7 +199,7 @@ function sendViaBrevoAPI(toEmail, otp) {
 
 // ─── SMTP Fallback Sender ────────────────────────────────────────────────────
 
-async function sendViaSMTP(toEmail, otp) {
+async function sendViaSMTP(toEmail, otp, name) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
@@ -224,7 +225,7 @@ async function sendViaSMTP(toEmail, otp) {
     to: toEmail,
     subject: "Your DoEz Verification Code",
     text: `Your DoEz OTP is: ${otp}\nExpires in 5 minutes. Do not share.`,
-    html: buildEmailHtml(otp),
+    html: buildEmailHtml(otp, name),
   });
 
   return info.messageId;
@@ -237,7 +238,7 @@ async function sendViaSMTP(toEmail, otp) {
  * OTP is saved to MongoDB (hashed) before email is sent.
  * If email fails, OTP is rolled back (deleted from DB).
  */
-async function sendOtp(email, forceResend = false) {
+async function sendOtp(email, forceResend = false, name = null) {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw { reason: "Please enter a valid email address.", statusCode: 400 };
   }
@@ -270,12 +271,12 @@ async function sendOtp(email, forceResend = false) {
 
   // Send email — try REST API first, fall back to SMTP
   try {
-    const messageId = await sendViaBrevoAPI(normalizedEmail, otp);
+    const messageId = await sendViaBrevoAPI(normalizedEmail, otp, name);
     console.log(`[OTP] ✅ Brevo API → ${normalizedEmail} | ID: ${messageId}`);
   } catch (apiError) {
     console.warn(`[OTP] ⚠️ Brevo API failed: ${apiError.message} — trying SMTP...`);
     try {
-      const smtpId = await sendViaSMTP(normalizedEmail, otp);
+      const smtpId = await sendViaSMTP(normalizedEmail, otp, name);
       console.log(`[OTP] ✅ SMTP fallback → ${normalizedEmail} | ID: ${smtpId}`);
     } catch (smtpError) {
       // Both failed — rollback DB
@@ -294,7 +295,7 @@ async function sendOtp(email, forceResend = false) {
  * Compares against the bcrypt hash stored in MongoDB.
  * Deletes the OTP record after successful verification.
  */
-async function verifyOtp(email, enteredOtp) {
+async function verifyOtp(email, enteredOtp, keepAfterVerify = false) {
   if (!email || !enteredOtp) {
     throw { reason: "Email and OTP are required.", statusCode: 400 };
   }
@@ -321,8 +322,13 @@ async function verifyOtp(email, enteredOtp) {
     throw { reason: "Incorrect OTP. Please check and try again.", statusCode: 400 };
   }
 
-  await deleteOtp(normalizedEmail);
-  console.log(`[OTP] ✅ Verified for ${normalizedEmail}`);
+  if (!keepAfterVerify) {
+    await deleteOtp(normalizedEmail);
+    console.log(`[OTP] ✅ Verified for ${normalizedEmail} (deleted)`);
+  } else {
+    console.log(`[OTP] ✅ Verified for ${normalizedEmail} (kept for later consume)`);
+  }
+  
   return true;
 }
 

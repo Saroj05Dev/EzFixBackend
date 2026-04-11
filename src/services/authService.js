@@ -123,4 +123,39 @@ async function registerAndLogin(userDetails) {
   };
 }
 
-module.exports = { loginUser, registerAndLogin };
+async function resetPassword(email, newPassword) {
+  if (!email) {
+    throw { reason: "Email is required.", statusCode: 400 };
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // 1 Find the user
+  const user = await findUser({ email: normalizedEmail });
+  if (!user) {
+    throw { reason: "No account found with this email.", statusCode: 404 };
+  }
+
+  // 2 Validate password strength (same rule as registration)
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  if (!passwordRegex.test(newPassword)) {
+    throw {
+      reason:
+        "Password must be at least 8 characters with uppercase, lowercase, number & special character.",
+      statusCode: 400,
+    };
+  }
+
+  // 3 Hash the new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // 4 Update the user's password
+  const { updateUserById } = require("../repositories/userRepository");
+  await updateUserById(user._id, { password: hashedPassword });
+
+  return { message: "Password reset successfully." };
+}
+
+module.exports = { loginUser, registerAndLogin, resetPassword };
