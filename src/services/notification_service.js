@@ -52,10 +52,15 @@ async function getUnreadNotificationCount(userId) {
     return await notificationRepository.getUnreadCount(userId);
 }
 
+async function deleteNotification(id) {
+    return await notificationRepository.deleteNotification(id);
+}
+
 module.exports = {
     notifyNewBooking,
     notifyBookingStatusUpdate,
     getUserNotifications,
     markNotificationAsRead,
     getUnreadNotificationCount,
+    deleteNotification,
 };

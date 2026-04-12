@@ -59,6 +59,7 @@ const userSchema = new mongoose.Schema(
     paymentQrCode: String,
     rates: Number,
     workArea: String,
+    address: String,
     experienceYears: Number,
     availability: {
       type: String,

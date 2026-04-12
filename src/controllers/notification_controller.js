@@ -27,8 +27,17 @@ async function getUnreadCount(req, res) {
     }
 }
 
+async function deleteNotification(req, res) {
+    try {
+        await notificationService.deleteNotification(req.params.id);
+        return res.status(200).json({ success: true, message: "Notification deleted" });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: error.message });
+    }
+}
 module.exports = {
     getNotifications,
     markRead,
     getUnreadCount,
+    deleteNotification,
 };

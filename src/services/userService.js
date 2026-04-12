@@ -71,7 +71,8 @@ async function registerUser(userDetails) {
 
 async function changePassword(userId, oldPassword, newPassword) {
   try {
-    const user = await findUserById(userId);
+    const User = require("../schema/userSchema");
+    const user = await User.findById(userId);
     if (!user) throw { reason: "User not found", statusCode: 404 };
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);

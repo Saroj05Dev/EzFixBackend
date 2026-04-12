@@ -16,6 +16,7 @@ router.get('/me', isAuthenticated, (req, res) => {
       name: req.user.name,
       email: req.user.email,
       phone: req.user.phone,
+      address: req.user.address,
       role: req.user.role,
       profileImage: req.user.profileImage
     }

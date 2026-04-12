@@ -31,9 +31,14 @@ async function getUnreadCount(userId) {
     return await Notification.countDocuments({ recipient: userId, isRead: false });
 }
 
+async function deleteNotification(notificationId) {
+    return await Notification.findByIdAndDelete(notificationId);
+}
+
 module.exports = {
     createNotification,
     getUserNotifications,
     markAsRead,
     getUnreadCount,
+    deleteNotification,
 };
