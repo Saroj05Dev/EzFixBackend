@@ -1,9 +1,32 @@
 const SubService2Repository = require("../repositories/Sub_service2_repository");
 
 async function createSubService2(data) {
-  if (!data.name || !data.serviceId || !data.subServiceId || !data.subService1Id) {
+  const {
+    name,
+    image,
+    price,
+    description,
+    serviceId,
+    subServiceId,
+    subService1Id,
+  } = data;
+
+  if (
+    !name ||
+    !image ||
+    price === undefined ||
+    !description ||
+    !serviceId ||
+    !subServiceId ||
+    !subService1Id
+  ) {
     throw new Error("All fields are required");
   }
+
+  if (typeof price !== "number") {
+    throw new Error("Price must be a number");
+  }
+
   return await SubService2Repository.createSubService2(data);
 }
 

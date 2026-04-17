@@ -3,11 +3,13 @@ const router = express.Router();
 
 const subService2Controller = require("../controllers/Sub_service2_controller");
 const { isAuthenticated, isAuthorized } = require("../middlewares/authMiddleware");
+const { upload } = require("../controllers/Sub_service2_controller");
 
 router.post(
   "/",
   isAuthenticated,
   isAuthorized(["admin"]),
+  upload.single("image"),
   subService2Controller.createSubService2
 );
 
@@ -30,6 +32,7 @@ router.put(
   "/:id",
   isAuthenticated,
   isAuthorized(["admin"]),
+  upload.single("image"),
   subService2Controller.updateSubService2
 );
 

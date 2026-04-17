@@ -27,6 +27,12 @@ async function createService(req, res) {
 
     req.body.price = Number(req.body.price);
 
+    if (req.body.discount !== undefined && req.body.discount !== null && req.body.discount !== "") {
+      req.body.discount = Number(req.body.discount);
+    } else {
+      req.body.discount = null;
+    }
+
     const service = await ServiceService.createService(req.body);
 
     return res.status(201).json({
@@ -86,6 +92,12 @@ async function updateService(req, res) {
 
     if (req.body.price) {
       req.body.price = Number(req.body.price);
+    }
+
+    if (req.body.discount !== undefined && req.body.discount !== null && req.body.discount !== "") {
+      req.body.discount = Number(req.body.discount);
+    } else if (req.body.discount === "") {
+      req.body.discount = null;
     }
 
     const service = await ServiceService.updateService(id, req.body);

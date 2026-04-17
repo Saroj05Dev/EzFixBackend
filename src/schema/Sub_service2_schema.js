@@ -8,6 +8,19 @@ const subService2Schema = new Schema(
       required: true,
       trim: true,
     },
+    image: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     serviceId: {
       type: Schema.Types.ObjectId,

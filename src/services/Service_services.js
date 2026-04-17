@@ -6,6 +6,7 @@ async function createService(data) {
     image,
     price,
     description,
+    discount,
   } = data;
 
   if (
@@ -15,6 +16,14 @@ async function createService(data) {
     !description
   ) {
     throw new Error("All fields are required");
+  }
+
+  // Validate discount only when provided
+  if (discount !== undefined && discount !== null && discount !== "") {
+    const discountValue = parseFloat(discount);
+    if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
+      throw new Error("Discount must be a number between 0 and 100");
+    }
   }
 
   return await ServiceRepository.createService(data);
