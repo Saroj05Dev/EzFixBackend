@@ -30,7 +30,10 @@ async function createService(req, res) {
       req.body.image = imageUrl;
     }
 
-    req.body.price = Number(req.body.price);
+    // Keep price as string to support ranges like "400-500"
+    if (req.body.price) {
+      req.body.price = String(req.body.price).trim();
+    }
 
     if (req.body.discount !== undefined && req.body.discount !== null && req.body.discount !== "") {
       req.body.discount = Number(req.body.discount);
@@ -95,8 +98,9 @@ async function updateService(req, res) {
       req.body.image = imageUrl;
     }
 
+    // Keep price as string to support ranges like "400-500"
     if (req.body.price) {
-      req.body.price = Number(req.body.price);
+      req.body.price = String(req.body.price).trim();
     }
 
     if (req.body.discount !== undefined && req.body.discount !== null && req.body.discount !== "") {
