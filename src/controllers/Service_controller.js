@@ -25,7 +25,10 @@ async function createService(req, res) {
       req.body.image = imageUrl;
     }
 
-    req.body.price = Number(req.body.price);
+    // Keep price as string to support ranges like "400-500"
+    if (req.body.price) {
+      req.body.price = String(req.body.price).trim();
+    }
 
     const service = await ServiceService.createService(req.body);
 
@@ -84,8 +87,9 @@ async function updateService(req, res) {
       req.body.image = imageUrl;
     }
 
+    // Keep price as string to support ranges like "400-500"
     if (req.body.price) {
-      req.body.price = Number(req.body.price);
+      req.body.price = String(req.body.price).trim();
     }
 
     const service = await ServiceService.updateService(id, req.body);
