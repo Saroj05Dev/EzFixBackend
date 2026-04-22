@@ -6,6 +6,7 @@ const { findOtp } = require("../repositories/otpRepository");
 
 async function loginUser(authDetails) {
   let { email, password } = authDetails;
+  email = email?.toLowerCase().trim();
 
   // 1 Check user
   const user = await findUser({ email });
@@ -41,12 +42,14 @@ async function loginUser(authDetails) {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      profileImage: user.profileImage,
     },
   };
 }
 
 async function registerAndLogin(userDetails) {
   let { name, email, phone, password, role } = userDetails;
+  email = email?.toLowerCase().trim();
 
   // 1 Check duplicates
   const existingEmail = await findUser({ email });
@@ -119,6 +122,7 @@ async function registerAndLogin(userDetails) {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      profileImage: user.profileImage,
     },
   };
 }

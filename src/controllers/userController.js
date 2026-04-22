@@ -6,6 +6,7 @@ const {
 const { registerAndLogin, resetPassword } = require("../services/authService");
 const { sendOtp, verifyOtp } = require("../services/otpService");
 const { findUser } = require("../repositories/userRepository");
+const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
 
 async function getProfile(req, res) {
   try {
@@ -122,7 +123,7 @@ async function changePassword(req, res) {
 async function uploadProfileImage(req, res) {
   try {
     if (!req.file) throw { reason: "No image provided", statusCode: 400 };
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = await uploadToCloudinary(req.file.path, "ezfix/profile_images");
     await require("../services/userService").updateUserProfile(req.user.id, { profileImage: imageUrl });
     return res.status(200).json({ success: true, data: { profileImage: imageUrl } });
   } catch (error) {

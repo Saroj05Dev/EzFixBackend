@@ -15,6 +15,13 @@ async function getUserProfile(userId) {
 
 async function updateUserProfile(id, updatedData) {
   try {
+    if (
+      Object.prototype.hasOwnProperty.call(updatedData, "profileImage") &&
+      (updatedData.profileImage === "" || updatedData.profileImage == null)
+    ) {
+      delete updatedData.profileImage;
+    }
+
     if (updatedData.password) {
       updatedData.password = await bcrypt.hash(updatedData.password, 10);
     }
