@@ -39,6 +39,10 @@ const bookingSchema = new mongoose.Schema(
       enum: ["Pending", "Paid", "Failed"],
       default: "Pending",
     },
+    // Provider live-location persistence (updated in real-time via socket)
+    providerLat: { type: Number, default: null },
+    providerLng: { type: Number, default: null },
+    providerLastSeen: { type: Date, default: null },
   },
   { timestamps: true },
 );

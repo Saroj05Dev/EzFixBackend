@@ -7,6 +7,7 @@ const {
   createBooking,
   getAllBookings,
   deleteBooking,
+  getProviderLocation,
 } = require("../controllers/booking_controller");
 const {
   isAuthenticated,
@@ -30,6 +31,7 @@ router.put(
   updateBookingStatus
 );
 router.post("/", isAuthenticated, createBooking); // Add a booking (customer only)
-router.delete("/:id", isAuthenticated, deleteBooking); 
+router.delete("/:id", isAuthenticated, deleteBooking);
+router.get("/:id/provider-location", isAuthenticated, getProviderLocation); // Last known provider GPS
 router.get("/", isAuthenticated, isAuthorized(["admin"]), getAllBookings); // Admin-only list
 module.exports = router;
