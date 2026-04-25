@@ -118,6 +118,34 @@ async function deleteBookingService(bookingId, userId) {
   return await deleteBookingRepo(bookingId);
 }
 
+async function getProviderLocationService(bookingId, requestingUserId) {
+  const booking = await findBookingById(bookingId);
+  if (!booking) throw { reason: "Booking not found", statusCode: 404 };
+
+  // Only the customer of this booking or the provider can request location
+  const customerId = booking.customer_id._id
+    ? booking.customer_id._id.toString()
+    : booking.customer_id.toString();
+  const providerId = booking.provider_id._id
+    ? booking.provider_id._id.toString()
+    : booking.provider_id.toString();
+
+  if (requestingUserId !== customerId && requestingUserId !== providerId) {
+    throw { reason: "Unauthorized", statusCode: 403 };
+  }
+
+  return {
+    // Provider last known live location
+    providerLat: booking.providerLat ?? null,
+    providerLng: booking.providerLng ?? null,
+    providerLastSeen: booking.providerLastSeen ?? null,
+    // Customer pinned booking destination
+    destinationLat: booking.lat ?? null,
+    destinationLng: booking.long ?? null,
+    address: booking.address,
+  };
+}
+
 async function getAllBookingsService() {
   return await getAllBookings();
 }
@@ -127,7 +155,8 @@ module.exports = {
   getProviderBookingsService,
   cancelBookingService,
   updateBookingStatusService,
-  createBookingService, // ← NEW
+  createBookingService,
   getAllBookingsService,
   deleteBookingService,
+  getProviderLocationService,
 };
