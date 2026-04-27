@@ -29,12 +29,33 @@ function initSocket(server) {
   });
 
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
-
     socket.on("join", (userId) => {
       userSockets.set(userId, socket.id);
+      socket.data.userId = userId?.toString();
       socket.join(`user_${userId}`);
-      console.log(`User ${userId} joined room user_${userId}`);
+    });
+
+    socket.on("joinBooking", async (bookingId) => {
+      if (!bookingId || !socket.data.userId) return;
+
+      try {
+        const Booking = require("../schema/booking_schema");
+        const booking = await Booking.findById(bookingId).select("customer_id provider_id").lean();
+        if (!booking) return;
+
+        const customerId = booking.customer_id?.toString();
+        const providerId = booking.provider_id?.toString();
+        if (socket.data.userId !== customerId && socket.data.userId !== providerId) return;
+
+        socket.join(`booking_${bookingId}`);
+      } catch (err) {
+        console.error("[socket] Failed to join booking room:", err.message);
+      }
+    });
+
+    socket.on("leaveBooking", (bookingId) => {
+      if (!bookingId) return;
+      socket.leave(`booking_${bookingId}`);
     });
 
     socket.on("updateLocation", async (data) => {
@@ -53,6 +74,16 @@ function initSocket(server) {
       // Broadcast to the other party immediately
       if (targetId) {
         io.to(`user_${targetId}`).emit("locationUpdated", {
+          userId,
+          role,
+          lat,
+          lng,
+          bookingId,
+        });
+      }
+
+      if (bookingId) {
+        socket.to(`booking_${bookingId}`).emit("locationUpdated", {
           userId,
           role,
           lat,
@@ -93,7 +124,6 @@ function initSocket(server) {
           break;
         }
       }
-      console.log("Socket disconnected:", socket.id);
     });
   });
 

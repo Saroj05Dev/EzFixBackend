@@ -7,12 +7,16 @@ async function connectDB() {
         console.log("Successfully connected to the mongo db server .....");
 
         try {
-            await mongoose.connection.collection('users').dropIndex('phone_1');
-            console.log("✅ Successfully dropped the old phone_1 index.");
-
             const User = require('../schema/userSchema');
+            const indexes = await mongoose.connection.collection('users').indexes();
+            const phoneIndex = indexes.find((index) => index.name === 'phone_1');
+
+            if (phoneIndex && !phoneIndex.sparse) {
+                await mongoose.connection.collection('users').dropIndex('phone_1');
+                console.log("✅ Migrated old phone_1 index to sparse index.");
+            }
+
             await User.syncIndexes();
-            console.log("✅ Successfully re-synced new sparse indexes!");
         } catch (idxError) {
             if (idxError.codeName !== 'IndexNotFound') {
                 console.log("Index setup msg:", idxError.message);
