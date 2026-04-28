@@ -1,138 +1,147 @@
 const { Server } = require("socket.io");
 const ServerConfig = require("./serverConfig");
+const Message = require("../schema/message_schema");
+const Booking = require("../schema/booking_schema");
 
 let io;
-const userSockets = new Map();
-
-// Debounce timers per bookingId to avoid hitting DB on every GPS tick
-const dbWriteTimers = new Map();
 
 function initSocket(server) {
   io = new Server(server, {
     cors: {
-      origin: (origin, callback) => {
-        // Allow all vercel domains + configured origin
-        if (
-          !origin ||
-          origin === ServerConfig.CORS_ORIGIN ||
-          (origin && origin.endsWith(".vercel.app")) ||
-          origin === "http://localhost:5173" ||
-          origin === "http://localhost:5174"
-        ) {
-          callback(null, true);
-        } else {
-          callback(null, true); // permissive for WS – HTTP layer already guards
-        }
-      },
+      origin: [
+        ServerConfig.CORS_ORIGIN,
+        "http://localhost:5173",
+        "http://localhost:5174",
+      ],
       credentials: true,
     },
   });
 
   io.on("connection", (socket) => {
+    console.log("Socket connected:", socket.id);
+
+    // ===============================
+    // USER PERSONAL ROOM JOIN
+    // ===============================
     socket.on("join", (userId) => {
-      userSockets.set(userId, socket.id);
-      socket.data.userId = userId?.toString();
+      if (!userId) return;
+
+      socket.userId = userId.toString();
       socket.join(`user_${userId}`);
+
+      console.log(`User ${userId} joined personal room`);
     });
 
+    // ===============================
+    // BOOKING ROOM JOIN
+    // ===============================
     socket.on("joinBooking", async (bookingId) => {
-      if (!bookingId || !socket.data.userId) return;
+      if (!bookingId) return;
 
-      try {
-        const Booking = require("../schema/booking_schema");
-        const booking = await Booking.findById(bookingId).select("customer_id provider_id").lean();
-        if (!booking) return;
+      socket.join(`booking_${bookingId}`);
 
-        const customerId = booking.customer_id?.toString();
-        const providerId = booking.provider_id?.toString();
-        if (socket.data.userId !== customerId && socket.data.userId !== providerId) return;
-
-        socket.join(`booking_${bookingId}`);
-      } catch (err) {
-        console.error("[socket] Failed to join booking room:", err.message);
-      }
+      console.log(`Socket joined booking room ${bookingId}`);
     });
 
+    // ===============================
+    // LEAVE BOOKING ROOM
+    // ===============================
     socket.on("leaveBooking", (bookingId) => {
       if (!bookingId) return;
+
       socket.leave(`booking_${bookingId}`);
     });
 
-    socket.on("updateLocation", async (data) => {
-      const { userId, role, lat, lng, bookingId, targetId } = data;
+    // ===============================
+    // REALTIME CHAT SYSTEM FIXED
+    // ===============================
+    socket.on("sendMessage", async (data) => {
+      try {
+        const { bookingId, senderId, senderModel, message } = data;
 
-      // Validate payload
-      if (
-        typeof lat !== "number" ||
-        typeof lng !== "number" ||
-        isNaN(lat) ||
-        isNaN(lng)
-      ) {
-        return;
-      }
-
-      // Broadcast to the other party immediately
-      if (targetId) {
-        io.to(`user_${targetId}`).emit("locationUpdated", {
-          userId,
-          role,
-          lat,
-          lng,
-          bookingId,
-        });
-      }
-
-      if (bookingId) {
-        socket.to(`booking_${bookingId}`).emit("locationUpdated", {
-          userId,
-          role,
-          lat,
-          lng,
-          bookingId,
-        });
-      }
-
-      // Persist provider location to DB (debounced: 3 seconds)
-      if (role === "provider" && bookingId) {
-        if (dbWriteTimers.has(bookingId)) {
-          clearTimeout(dbWriteTimers.get(bookingId));
+        if (
+          !bookingId ||
+          !senderId ||
+          !senderModel ||
+          !message ||
+          !message.trim()
+        ) {
+          return;
         }
-        dbWriteTimers.set(
+
+        // Fetch booking details
+        const booking = await Booking.findById(bookingId)
+          .select("customer_id provider_id")
+          .lean();
+
+        if (!booking) {
+          console.log("Booking not found");
+          return;
+        }
+
+        let receiverId;
+        let receiverModel;
+
+        // Auto detect receiver
+        if (senderModel === "Customer") {
+          receiverId = booking.provider_id;
+          receiverModel = "Provider";
+        } else if (senderModel === "Provider") {
+          receiverId = booking.customer_id;
+          receiverModel = "Customer";
+        } else {
+          return;
+        }
+
+        // Save message in DB
+        const newMessage = await Message.create({
           bookingId,
-          setTimeout(async () => {
-            try {
-              const Booking = require("../schema/booking_schema");
-              await Booking.findByIdAndUpdate(bookingId, {
-                providerLat: lat,
-                providerLng: lng,
-                providerLastSeen: new Date(),
-              });
-            } catch (err) {
-              console.error("[socket] Failed to persist provider location:", err.message);
-            } finally {
-              dbWriteTimers.delete(bookingId);
-            }
-          }, 3000)
+          senderId,
+          senderModel,
+          receiverId,
+          receiverModel,
+          message: message.trim(),
+          isRead: false,
+        });
+
+        // Populate sender and receiver info
+        const populatedMessage = await Message.findById(newMessage._id)
+          .populate("senderId", "name avatar")
+          .populate("receiverId", "name avatar");
+
+        // ===============================
+        // SEND TO BOOKING ROOM
+        // ===============================
+        io.to(`booking_${bookingId}`).emit(
+          "receiveMessage",
+          populatedMessage
         );
+
+        // ===============================
+        // SEND TO RECEIVER PERSONAL ROOM
+        // ===============================
+        io.to(`user_${receiverId}`).emit(
+          "receiveMessage",
+          populatedMessage
+        );
+
+        console.log(
+          `Message sent: ${senderModel} -> ${receiverModel}`
+        );
+      } catch (err) {
+        console.error("Socket sendMessage error:", err.message);
       }
     });
 
+    // ===============================
+    // DISCONNECT
+    // ===============================
     socket.on("disconnect", () => {
-      for (let [userId, socketId] of userSockets.entries()) {
-        if (socketId === socket.id) {
-          userSockets.delete(userId);
-          break;
-        }
-      }
+      console.log("Socket disconnected:", socket.id);
     });
   });
 
   return io;
 }
 
-function getIO() {
-  if (!io) throw new Error("Socket.io not initialized");
-  return io;
-}
-
-module.exports = { initSocket, getIO };
+module.exports = { initSocket };
