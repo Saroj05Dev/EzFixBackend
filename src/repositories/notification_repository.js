@@ -27,6 +27,10 @@ async function markAsRead(notificationId) {
     return await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
 }
 
+async function markAllAsRead(userId) {
+    return await Notification.updateMany({ recipient: userId, isRead: false }, { isRead: true });
+}
+
 async function getUnreadCount(userId) {
     return await Notification.countDocuments({ recipient: userId, isRead: false });
 }
@@ -39,6 +43,7 @@ module.exports = {
     createNotification,
     getUserNotifications,
     markAsRead,
+    markAllAsRead,
     getUnreadCount,
     deleteNotification,
 };

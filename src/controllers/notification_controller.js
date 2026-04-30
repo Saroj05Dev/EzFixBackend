@@ -18,6 +18,15 @@ async function markRead(req, res) {
     }
 }
 
+async function markAllRead(req, res) {
+    try {
+        await notificationService.markAllNotificationsAsRead(req.user.id);
+        return res.status(200).json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: error.message });
+    }
+}
+
 async function getUnreadCount(req, res) {
     try {
         const count = await notificationService.getUnreadNotificationCount(req.user.id);
@@ -38,6 +47,7 @@ async function deleteNotification(req, res) {
 module.exports = {
     getNotifications,
     markRead,
+    markAllRead,
     getUnreadCount,
     deleteNotification,
 };
