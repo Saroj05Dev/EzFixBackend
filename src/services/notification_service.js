@@ -48,6 +48,10 @@ async function markNotificationAsRead(id) {
     return await notificationRepository.markAsRead(id);
 }
 
+async function markAllNotificationsAsRead(userId) {
+    return await notificationRepository.markAllAsRead(userId);
+}
+
 async function getUnreadNotificationCount(userId) {
     return await notificationRepository.getUnreadCount(userId);
 }
@@ -61,6 +65,7 @@ module.exports = {
     notifyBookingStatusUpdate,
     getUserNotifications,
     markNotificationAsRead,
+    markAllNotificationsAsRead,
     getUnreadNotificationCount,
     deleteNotification,
 };
