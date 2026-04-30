@@ -18,8 +18,6 @@ function initSocket(server) {
   });
 
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
-
     // ===============================
     // USER PERSONAL ROOM JOIN
     // ===============================
@@ -28,8 +26,6 @@ function initSocket(server) {
 
       socket.userId = userId.toString();
       socket.join(`user_${userId}`);
-
-      console.log(`User ${userId} joined personal room`);
     });
 
     // ===============================
@@ -39,8 +35,6 @@ function initSocket(server) {
       if (!bookingId) return;
 
       socket.join(`booking_${bookingId}`);
-
-      console.log(`Socket joined booking room ${bookingId}`);
     });
 
     // ===============================
@@ -50,6 +44,57 @@ function initSocket(server) {
       if (!bookingId) return;
 
       socket.leave(`booking_${bookingId}`);
+    });
+
+    // ===============================
+    // PROVIDER LIVE LOCATION
+    // ===============================
+    socket.on("updateLocation", async (data) => {
+      try {
+        const { bookingId, userId, role, lat, lng, targetId } = data || {};
+        const providerUserId = (userId || socket.userId)?.toString();
+        const parsedLat = Number(lat);
+        const parsedLng = Number(lng);
+
+        if (
+          !bookingId ||
+          !providerUserId ||
+          role !== "provider" ||
+          !Number.isFinite(parsedLat) ||
+          !Number.isFinite(parsedLng)
+        ) {
+          return;
+        }
+
+        const booking = await Booking.findOneAndUpdate(
+          { _id: bookingId, provider_id: providerUserId },
+          {
+            $set: {
+              providerLat: parsedLat,
+              providerLng: parsedLng,
+              providerLastSeen: new Date(),
+            },
+          },
+          { new: true },
+        ).select("customer_id providerLastSeen");
+
+        if (!booking) return;
+
+        const payload = {
+          bookingId: bookingId.toString(),
+          userId: providerUserId,
+          role: "provider",
+          lat: parsedLat,
+          lng: parsedLng,
+          lastSeen: booking.providerLastSeen,
+        };
+
+        io.to(`booking_${bookingId}`).emit("locationUpdated", payload);
+        io.to(`user_${booking.customer_id}`).emit("locationUpdated", payload);
+        if (targetId) io.to(`user_${targetId}`).emit("locationUpdated", payload);
+      } catch (err) {
+        console.error("Socket updateLocation error:", err.message);
+      }
     });
 
     // ===============================
@@ -71,11 +116,15 @@ function initSocket(server) {
 
         // Fetch booking details
         const booking = await Booking.findById(bookingId)
-          .select("customer_id provider_id")
+          .select("customer_id provider_id status")
           .lean();
 
         if (!booking) {
           console.log("Booking not found");
+          return;
+        }
+
+        if (!["Confirmed", "In Progress", "Completed"].includes(booking.status)) {
           return;
         }
 
@@ -124,10 +173,6 @@ function initSocket(server) {
           "receiveMessage",
           populatedMessage
         );
-
-        console.log(
-          `Message sent: ${senderModel} -> ${receiverModel}`
-        );
       } catch (err) {
         console.error("Socket sendMessage error:", err.message);
       }
@@ -136,9 +181,7 @@ function initSocket(server) {
     // ===============================
     // DISCONNECT
     // ===============================
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected:", socket.id);
-    });
+    socket.on("disconnect", () => {});
   });
 
   return io;

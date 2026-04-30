@@ -2,6 +2,7 @@ const {
   getCustomerBookings,
   getProviderBookings,
   updateBookingStatus,
+  countActiveAcceptedProviderBookings,
   findBookingById,
   createBooking,
   getAllBookings,
@@ -40,14 +41,28 @@ async function updateBookingStatusService(bookingId, providerId, status) {
     if (pId !== providerId) throw { reason: "Unauthorized", statusCode: 403 };
   }
 
+  if (booking.status === status) return booking;
+
   const valid = {
-    Pending: ["Confirmed"],
-    Confirmed: ["In Progress", "Completed"],
-    "In Progress": ["Completed"],
+    Pending: ["Confirmed", "Cancelled"],
+    Confirmed: ["In Progress", "Completed", "Cancelled"],
+    "In Progress": ["Completed", "Cancelled"],
+    Completed: [],
+    Cancelled: [],
   };
 
   if (!valid[booking.status]?.includes(status))
     throw { reason: "Invalid status", statusCode: 400 };
+
+  if (booking.status === "Pending" && status === "Confirmed") {
+    const activeAcceptedCount = await countActiveAcceptedProviderBookings(providerId);
+    if (activeAcceptedCount >= 3) {
+      throw {
+        reason: "You already have 3 active accepted bookings. Complete one before accepting another.",
+        statusCode: 400,
+      };
+    }
+  }
 
   // Calculate commission if the status is changing to Completed
   if (status === "Completed") {
