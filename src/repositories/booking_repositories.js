@@ -59,6 +59,14 @@ async function updateBookingStatus(id, status) {
     })
     .populate("provider_id", "name phone rates workArea");
 }
+
+async function countActiveAcceptedProviderBookings(providerId) {
+  return await Booking.countDocuments({
+    provider_id: providerId,
+    status: { $in: ["Confirmed", "In Progress"] },
+  });
+}
+
 async function createBooking(bookingData) {
   const booking = new Booking(bookingData);
   return await booking.save();
@@ -89,6 +97,7 @@ module.exports = {
   getCustomerBookings,
   getProviderBookings,
   updateBookingStatus,
+  countActiveAcceptedProviderBookings,
   createBooking,
   getAllBookings,
   deleteBookingRepo,
