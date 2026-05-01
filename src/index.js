@@ -23,7 +23,9 @@ const notificationRoutes = require("./routes/notification_routes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const settingsRoutes = require("./routes/settings_routes");
 const chatRoutes = require("./routes/chat_routes");
-const locationRoutes = require("./routes/location_routes");
+const countryRoutes = require("./routes/country_routes");
+const stateRoutes = require("./routes/state_routes");
+const cityRoutes = require("./routes/city_routes");
 const app = express();
 const server = http.createServer(app);
 
@@ -92,7 +94,9 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/locations", locationRoutes);
+app.use("/api/country", countryRoutes);
+app.use("/api/state", stateRoutes);
+app.use("/api/city", cityRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Global Error Handler
