@@ -23,9 +23,9 @@ const notificationRoutes = require("./routes/notification_routes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const settingsRoutes = require("./routes/settings_routes");
 const chatRoutes = require("./routes/chat_routes");
-const countryRoutes = require("./routes/country_routes");
-const stateRoutes = require("./routes/state_routes");
-const cityRoutes = require("./routes/city_routes");
+const countryRoutes = require("./routes/countryRoutes");
+const stateRoutes = require("./routes/stateRoutes");
+const cityRoutes = require("./routes/cityRoutes");
 const app = express();
 const server = http.createServer(app);
 
