@@ -14,4 +14,7 @@ router.get("/states", stateController.getAllStates);
 // Get States by Country
 router.get("/states/country/:countryId", stateController.getStatesByCountry);
 
+// Delete State
+router.delete("/states/:id", stateController.deleteState);
+
 module.exports = router;

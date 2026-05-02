@@ -23,9 +23,15 @@ async function getStatesByCountry(countryId) {
     return await State.find({ country: countryId }).sort({ name: 1 });
 }
 
+// Delete State
+async function deleteState(id) {
+    return await State.findByIdAndDelete(id);
+}
+
 module.exports = {
     createState,
     updateState,
     getAllStates,
-    getStatesByCountry
+    getStatesByCountry,
+    deleteState
 };

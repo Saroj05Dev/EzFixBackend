@@ -20,9 +20,15 @@ async function getCitiesByState(stateId) {
     return await cityRepository.getCitiesByState(stateId);
 }
 
+// Delete City
+async function deleteCity(id) {
+    return await cityRepository.deleteCity(id);
+}
+
 module.exports = {
     addCity,
     updateCity,
     getAllCities,
-    getCitiesByState
+    getCitiesByState,
+    deleteCity
 };
