@@ -94,9 +94,35 @@ const getCitiesByState = async (req, res) => {
     }
 };
 
+// Delete City
+const deleteCity = async (req, res) => {
+    try {
+        const city = await cityService.deleteCity(req.params.id);
+
+        if (!city) {
+            return res.status(404).json({
+                success: false,
+                message: "City not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "City deleted successfully"
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
     addCity,
     updateCity,
     getAllCities,
-    getCitiesByState
+    getCitiesByState,
+    deleteCity
 };

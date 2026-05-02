@@ -20,9 +20,15 @@ async function getStatesByCountry(countryId) {
     return await stateRepository.getStatesByCountry(countryId);
 }
 
+// Delete State
+async function deleteState(id) {
+    return await stateRepository.deleteState(id);
+}
+
 module.exports = {
     addState,
     updateState,
     getAllStates,
-    getStatesByCountry
+    getStatesByCountry,
+    deleteState
 };

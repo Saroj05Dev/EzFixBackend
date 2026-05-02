@@ -14,4 +14,7 @@ router.get("/cities", cityController.getAllCities);
 // Get Cities by State
 router.get("/cities/state/:stateId", cityController.getCitiesByState);
 
+// Delete City
+router.delete("/cities/:id", cityController.deleteCity);
+
 module.exports = router;
