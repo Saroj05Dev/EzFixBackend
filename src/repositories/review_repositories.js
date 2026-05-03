@@ -14,6 +14,13 @@ async function getAllReviews() {
         return await Review.find()
             .populate('customer_id', 'name')
             .populate('provider_id', 'name')
+            .populate({
+                path: 'booking_id',
+                populate: {
+                    path: 'service_id',
+                    select: 'serviceId'
+                }
+            })
             .sort({ createdAt: -1 });
     } catch (error) {
         throw error;
