@@ -13,7 +13,7 @@ const subService3Schema = new Schema(
     },
 
     price: {
-      type: Number,
+      type: String,
       required: true,
     },
 

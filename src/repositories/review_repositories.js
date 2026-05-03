@@ -16,12 +16,39 @@ async function getAllReviews() {
             .populate('provider_id', 'name')
             .populate({
                 path: 'booking_id',
+                select: 'service_id',
                 populate: {
                     path: 'service_id',
-                    select: 'serviceId'
+                    select: 'serviceId',
+                    populate: {
+                        path: 'serviceId',
+                        select: '_id name'
+                    }
                 }
             })
             .sort({ createdAt: -1 });
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Populates the full chain: booking → SubService3 → top-level Service
+async function getAllReviewsWithService() {
+    try {
+        return await Review.find()
+            .select('rating booking_id')
+            .populate({
+                path: 'booking_id',
+                select: 'service_id',
+                populate: {
+                    path: 'service_id',
+                    select: 'serviceId',
+                    populate: {
+                        path: 'serviceId',
+                        select: '_id name'
+                    }
+                }
+            });
     } catch (error) {
         throw error;
     }
@@ -69,6 +96,7 @@ async function findReviewById(id) {
 module.exports = {
     createReview,
     getAllReviews,
+    getAllReviewsWithService,
     getProviderReviews,
     hideReview,
     findReviewById
