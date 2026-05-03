@@ -26,7 +26,7 @@ async function createSubService3(req, res) {
     }
 
     if (req.body.price) {
-      req.body.price = Number(req.body.price);
+      req.body.price = String(req.body.price).trim();
     }
 
     const data = await SubService3Service.createSubService3(req.body);

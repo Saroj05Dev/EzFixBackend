@@ -24,9 +24,6 @@ async function createSubService3(data) {
     throw new Error("All fields are required");
   }
 
-  if (typeof price !== "number") {
-    throw new Error("Price must be a number");
-  }
 
   return await SubService3Repository.createSubService3(data);
 }
