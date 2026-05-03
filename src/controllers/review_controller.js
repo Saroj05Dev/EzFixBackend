@@ -1,5 +1,5 @@
 // src/controllers/review_controller.js
-const { submitReview, getProviderReviewsService, getAllReviewsService } = require("../services/review_services");
+const { submitReview, getProviderReviewsService, getAllReviewsService, getServiceRatingsService } = require("../services/review_services");
 
 async function submit(req, res) {
     try {
@@ -28,4 +28,13 @@ async function getAllReviews(req, res) {
     }
 }
 
-module.exports = { submit, getProviderReviews, getAllReviews };
+async function getServiceRatings(req, res) {
+    try {
+        const ratings = await getServiceRatingsService();
+        return res.status(200).json({ success: true, data: ratings });
+    } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
+    }
+}
+
+module.exports = { submit, getProviderReviews, getAllReviews, getServiceRatings };

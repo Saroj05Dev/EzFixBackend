@@ -26,7 +26,7 @@ async function createSubService2(req, res) {
     }
 
     if (req.body.price) {
-      req.body.price = Number(req.body.price);
+      req.body.price = String(req.body.price).trim();
     }
 
     const data = req.body;
