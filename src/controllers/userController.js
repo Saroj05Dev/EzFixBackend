@@ -2,6 +2,8 @@
 const {
   getUserProfile,
   updateUserProfile,
+  getAllUsersService,
+  updateUserStatus,
 } = require("../services/userService");
 const { registerAndLogin, resetPassword } = require("../services/authService");
 const { sendOtp, verifyOtp } = require("../services/otpService");
@@ -206,6 +208,29 @@ async function resetUserPassword(req, res) {
   }
 }
 
+async function updateUserStatusController(req, res) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, message: "Status is required" });
+    }
+
+    const updated = await updateUserStatus(id, status);
+    return res.status(200).json({
+      success: true,
+      message: `User account has been ${status === "active" ? "activated" : "suspended"}`,
+      data: updated,
+    });
+  } catch (e) {
+    return res.status(e.statusCode || 500).json({
+      success: false,
+      message: e.reason || e.message,
+    });
+  }
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -218,4 +243,5 @@ module.exports = {
   sendForgotPasswordOtp,
   verifyForgotPasswordOtp,
   resetUserPassword,
+  updateUserStatus: updateUserStatusController,
 };

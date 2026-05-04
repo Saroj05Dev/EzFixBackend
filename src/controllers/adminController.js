@@ -1,5 +1,5 @@
 const { addAdmin, fetchAllAdmins, modifyAdmin, toggleStatus, getCommissionStats, getProviderCommissionDetails } = require("../services/adminService");
-const { getAllUsersService } = require("../services/userService");
+const { getAllUsersService, updateUserStatus } = require("../services/userService");
 
 async function createAdmin(req, res) {
     try {
@@ -89,6 +89,24 @@ async function getUsers(req, res) {
     }
 }
 
+async function updateUserStatusController(req, res) {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const updated = await updateUserStatus(id, status);
+        return res.status(200).json({
+            success: true,
+            message: `User status updated to ${status}`,
+            data: updated
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.reason || error.message
+        });
+    }
+}
+
 module.exports = {
     createAdmin,
     getAllAdmins,
@@ -96,5 +114,6 @@ module.exports = {
     toggleAdminStatus,
     getCommissions,
     getProviderDetails,
-    getUsers
+    getUsers,
+    updateUserStatus: updateUserStatusController
 };

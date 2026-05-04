@@ -96,4 +96,37 @@ async function changePassword(userId, oldPassword, newPassword) {
 async function getAllUsersService() {
   return await require("../repositories/userRepository").getAllUsers();
 }
-module.exports = { getUserProfile, updateUserProfile, registerUser, getAllUsersService, changePassword };
+
+async function updateUserStatus(userId, status) {
+  try {
+    const user = await findUserById(userId);
+    if (!user) throw { reason: "User not found", statusCode: 404 };
+
+    // Check if the user is an admin
+    if (user.role === "admin") {
+      throw { reason: "Admin status cannot be modified via this API", statusCode: 403 };
+    }
+
+    // Only allow "active" or "suspended"
+    if (!["active", "suspended"].includes(status)) {
+      throw { reason: "Invalid status value", statusCode: 400 };
+    }
+
+    const updatedUser = await updateUserById(userId, { status });
+    return updatedUser;
+  } catch (error) {
+    throw {
+      reason: error.reason || "Failed to update user status",
+      statusCode: error.statusCode || 500,
+    };
+  }
+}
+
+module.exports = {
+  getUserProfile,
+  updateUserProfile,
+  registerUser,
+  getAllUsersService,
+  changePassword,
+  updateUserStatus,
+};
